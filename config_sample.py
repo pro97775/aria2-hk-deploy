@@ -10,16 +10,14 @@ CMD_SUFFIX = ""
 AUTHORIZED_CHATS = ""
 SUDO_USERS = ""
 DATABASE_URL = ""
-DATABASE_NAME = "cloudbot"
+DATABASE_NAME = "mltb"
 STATUS_LIMIT = 4
 DEFAULT_UPLOAD = "rc"
 STATUS_UPDATE_INTERVAL = 15
 FILELION_API = ""
 STREAMWISH_API = ""
 ALLDEBRID_API_KEY = ""
-BUZZHEAVIER_ACCOUNT_ID = ""
-BUZZHEAVIER_FOLDER_ID = ""
-GOFILE_API_KEY = ""
+TORBOX_API_KEY = ""
 TLDV_TOKEN = ""
 EXCLUDED_EXTENSIONS = ""
 INCLUDED_EXTENSIONS = ""
@@ -39,36 +37,9 @@ INDEX_URL = ""
 RCLONE_PATH = ""
 RCLONE_FLAGS = ""
 RCLONE_SERVE_URL = ""
-RCLONE_SERVE_PORT = 0
+RCLONE_SERVE_PORT = 8080
 RCLONE_SERVE_USER = ""
 RCLONE_SERVE_PASS = ""
-# JDownloader
-JD_EMAIL = ""
-JD_PASS = ""
-# Sabnzbd
-USENET_SERVERS = [
-    {
-        "name": "main",
-        "host": "",
-        "port": 563,
-        "timeout": 60,
-        "username": "",
-        "password": "",
-        "connections": 8,
-        "ssl": 1,
-        "ssl_verify": 2,
-        "ssl_ciphers": "",
-        "enable": 1,
-        "required": 0,
-        "optional": 0,
-        "retention": 0,
-        "send_group": 0,
-        "priority": 0,
-    }
-]
-# Nzb search
-HYDRA_IP = ""
-HYDRA_API_KEY = ""
 # Update
 UPSTREAM_REPO = ""
 UPSTREAM_BRANCH = "master"
@@ -84,10 +55,17 @@ LEECH_DUMP_CHAT = ""
 CLONE_DUMP_CHATS = ""
 THUMBNAIL_LAYOUT = ""
 FILES_LINKS = False
-# qBittorrent/Aria2c
+# Aria2c
 TORRENT_TIMEOUT = 0
+# Torrent batching: 0 files per batch disables batching.
+# When enabled, only N files are downloaded at a time, uploaded, then deleted
+# before the next files are marked for download.
+FILES_PER_BATCH = 0
+BATCH_MAX_SIZE = 0
+# Only download these file types: video audio photo document apps (empty = all)
+TORRENT_FILE_TYPES = []
 BASE_URL = ""
-BASE_URL_PORT = 0
+BASE_URL_PORT = 80
 WEB_PINCODE = False
 # Queueing system
 QUEUE_ALL = 0
@@ -97,7 +75,3 @@ QUEUE_UPLOAD = 0
 RSS_DELAY = 600
 RSS_CHAT = ""
 RSS_SIZE_LIMIT = 0
-# Torrent Search
-SEARCH_API_LINK = ""
-SEARCH_LIMIT = 0
-SEARCH_PLUGINS = []

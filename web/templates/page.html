@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torrent Selector</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --border: #334155;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent: #3b82f6;
+            --danger: #dc2626;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        header {
+            padding: 18px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        header h1 {
+            max-width: 900px;
+            margin: 0 auto;
+            font-size: 1.25rem;
+        }
+
+        main {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 16px;
+            flex: 1;
+        }
+
+        footer {
+            padding: 14px 16px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        h2 {
+            margin: 0 0 12px;
+            font-size: 1rem;
+        }
+
+        .pin-entry {
+            max-width: 360px;
+            margin: 40px auto;
+        }
+
+        .pin-entry input,
+        .toolbar input {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #0b1220;
+            color: var(--text);
+            font: inherit;
+        }
+
+        .pin-entry button {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .toolbar input {
+            width: 180px;
+            flex: 0 1 180px;
+        }
+
+        .btn {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            background: #334155;
+            color: var(--text);
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #475569;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .stats {
+            margin: 0 0 12px;
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .stats strong {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        #fileTree {
+            border-top: 1px solid var(--border);
+        }
+
+        .file-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .file-row:hover {
+            background: #243247;
+        }
+
+        .file-row input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            flex: 0 0 auto;
+        }
+
+        .file-name {
+            flex: 1;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .folder-row .file-name {
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .file-size {
+            flex: 0 0 auto;
+            color: var(--muted);
+            font-size: 0.78rem;
+        }
+
+        .back-row {
+            cursor: pointer;
+            color: var(--accent);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.65);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.open {
+            display: flex;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 18px;
+        }
+
+        .modal-card h2 {
+            margin-top: 0;
+        }
+
+        .modal-card p {
+            margin: 0 0 14px;
+            color: var(--muted);
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 560px) {
+            main {
+                padding: 12px;
+            }
+
+            .toolbar input {
+                flex: 1 1 100%;
+                width: 100%;
+            }
+
+            .toolbar .btn {
+                flex: 1 1 auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Torrent File Selector</h1>
+    </header>
+
+    <main>
+        <section id="pinEntry" class="card pin-entry">
+            <h2>Enter PIN</h2>
+            <input type="text" id="pinInput" inputmode="numeric" autocomplete="off"
+                placeholder="PIN from Telegram">
+            <button id="submitPin" class="btn btn-primary" type="button">Submit</button>
+        </section>
+
+        <section id="fileManager" class="card hidden">
+            <div class="toolbar">
+                <button id="selectAllBtn" class="btn" type="button">Select All</button>
+                <button id="invertSelectionBtn" class="btn" type="button">Invert</button>
+                <button id="selectEverythingBtn" class="btn" type="button">Select Everything</button>
+                <input type="text" id="rangeInput" placeholder="1-6, 9-43" aria-label="File number ranges">
+                <button id="applyRangeBtn" class="btn" type="button">Select Range</button>
+                <button id="submitBtn" class="btn btn-primary" type="button">Submit</button>
+            </div>
+            <p class="stats">
+                Selected: <strong id="selectedCount">0</strong> / <strong id="totalCount">0</strong>
+                &nbsp;·&nbsp; Size: <strong id="selectedSize">0 B</strong> / <strong id="totalSize">0 B</strong>
+            </p>
+            <div id="fileTree"></div>
+        </section>
+    </main>
+
+    <footer>Torrent Selector</footer>
+
+    <div id="reusableModal" class="modal">
+        <div class="modal-card">
+            <h2 id="modalTitle"></h2>
+            <p id="modalBody"></p>
+            <div id="modalFooter"></div>
+        </div>
+    </div>
+
+    <script>
+        const fileTree = document.getElementById('fileTree');
+        const selectedCount = document.getElementById('selectedCount');
+        const totalCount = document.getElementById('totalCount');
+        const selectedSize = document.getElementById('selectedSize');
+        const totalSize = document.getElementById('totalSize');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const invertSelectionBtn = document.getElementById('invertSelectionBtn');
+        const selectEverythingBtn = document.getElementById('selectEverythingBtn');
+        const rangeInput = document.getElementById('rangeInput');
+        const applyRangeBtn = document.getElementById('applyRangeBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const pinEntry = document.getElementById('pinEntry');
+        const pinInput = document.getElementById('pinInput');
+        const submitPin = document.getElementById('submitPin');
+        const fileManager = document.getElementById('fileManager');
+        const reusableModal = document.getElementById('reusableModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const modalFooter = document.getElementById('modalFooter');
+        const urlParams = new URLSearchParams(window.location.search);
+
+        let currentFolder = null;
+        let files = [];
+
+        pinInput.focus();
+        if (urlParams.get('pin')) {
+            pinInput.value = urlParams.get('pin');
+            setTimeout(() => submitPin.click(), 0);
+        }
+
+        function formatSize(size) {
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            let value = Number(size) || 0;
+            let index = 0;
+            while (value >= 1024 && index < units.length - 1) {
+                value /= 1024;
+                index++;
+            }
+            return `${value.toFixed(2)} ${units[index]}`;
+        }
+
+        function calculateFolderSize(folder) {
+            let size = 0;
+            const queue = [folder];
+            while (queue.length) {
+                const node = queue.pop();
+                if (node.type === 'file') {
+                    size += Number(node.size) || 0;
+                } else if (node.children) {
+                    queue.push(...node.children);
+                }
+            }
+            return size;
+        }
+
+        function renderFileTree(nodes) {
+            fileTree.innerHTML = '';
+            if (currentFolder) {
+                const back = document.createElement('div');
+                back.className = 'file-row back-row';
+                back.textContent = '← Back';
+                back.addEventListener('click', goBack);
+                fileTree.appendChild(back);
+            }
+            nodes.forEach(node => {
+                const row = document.createElement('div');
+                row.className = 'file-row';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = node.id;
+                checkbox.checked = Boolean(node.selected);
+                checkbox.addEventListener('change', () => toggleFile(node));
+
+                const name = document.createElement('span');
+                name.className = 'file-name';
+                name.textContent = node.type === 'file' ? `#${node.id} ${node.name}` : node.name;
+
+                const size = document.createElement('span');
+                size.className = 'file-size';
+                size.textContent = formatSize(
+                    node.type === 'folder' ? calculateFolderSize(node) : node.size
+                );
+
+                if (node.type === 'folder') {
+                    row.classList.add('folder-row');
+                    checkbox.indeterminate = !areAllChildrenSelected(node) && areSomeChildrenSelected(node);
+                    name.addEventListener('click', () => openFolder(node));
+                } else {
+                    name.addEventListener('click', () => toggleFile(node));
+                }
+
+                row.appendChild(checkbox);
+                row.appendChild(name);
+                row.appendChild(size);
+                fileTree.appendChild(row);
+            });
+            updateSelectAllButtonText();
+            updateSelectEverythingButtonText();
+        }
+
+        function updateSelectAllButtonText() {
+            const nodes = currentFolder ? currentFolder.children : files;
+            const allSelected = nodes.length > 0 && nodes.every(node =>
+                node.type === 'folder' ? areAllChildrenSelected(node) : node.selected
+            );
+            selectAllBtn.textContent = allSelected ? 'Deselect All' : 'Select All';
+        }
+
+        function updateSelectEverythingButtonText() {
+            const stats = calculateStats(files);
+            const allSelected = stats.total > 0 && stats.selected === stats.total;
+            selectEverythingBtn.textContent = allSelected ? 'Deselect Everything' : 'Select Everything';
+        }
+
+        function areAllChildrenSelected(folder) {
+            return (folder.children || []).every(child =>
+                child.type === 'folder' ? areAllChildrenSelected(child) : child.selected
+            );
+        }
+
+        function areSomeChildrenSelected(folder) {
+            return (folder.children || []).some(child =>
+                child.type === 'folder' ? areSomeChildrenSelected(child) : child.selected
+            );
+        }
+
+        function toggleFile(node) {
+            if (node.type === 'folder') {
+                toggleFolder(node, !areAllChildrenSelected(node));
+            } else {
+                node.selected = !node.selected;
+            }
+            updateParentFolders(node);
+            updateStats();
+            renderFileTree(currentFolder ? currentFolder.children : files);
+        }
+
+        function toggleFolder(folder, selected) {
+            folder.selected = selected;
+            const queue = [folder];
+            while (queue.length) {
+                const node = queue.pop();
+                if (node.type === 'file') {
+                    node.selected = selected;
+                } else if (node.children) {
+                    node.selected = selected;
+                    queue.push(...node.children);
+                }
+            }
+        }
+
+        function findParent(nodes, id, parent = null) {
+            for (const node of nodes) {
+                if (node.id === id) return parent;
+                if (node.children) {
+                    const found = findParent(node.children, id, node);
+                    if (found !== null) return found;
+                }
+            }
+            return null;
+        }
+
+        function updateParentFolders(node) {
+            let parent = findParent(files, node.id);
+            while (parent) {
+                parent.selected = areAllChildrenSelected(parent);
+                parent = findParent(files, parent.id);
+            }
+        }
+
+        function calculateStats(nodes) {
+            let selected = 0;
+            let total = 0;
+            let selectedBytes = 0;
+            let totalBytes = 0;
+            const queue = [...nodes];
+            while (queue.length) {
+                const node = queue.pop();
+                if (node.type === 'file') {
+                    const size = Number(node.size) || 0;
+                    total++;
+                    totalBytes += size;
+                    if (node.selected) {
+                        selected++;
+                        selectedBytes += size;
+                    }
+                }
+                if (node.children) queue.push(...node.children);
+            }
+            return { selected, total, selectedBytes, totalBytes };
+        }
+
+        function updateStats() {
+            const stats = calculateStats(files);
+            selectedCount.textContent = stats.selected;
+            totalCount.textContent = stats.total;
+            selectedSize.textContent = formatSize(stats.selectedBytes);
+            totalSize.textContent = formatSize(stats.totalBytes);
+            updateSelectEverythingButtonText();
+        }
+
+        function openFolder(folder) {
+            currentFolder = folder;
+            renderFileTree(folder.children);
+            updateStats();
+        }
+
+        function goBack() {
+            if (!currentFolder) return;
+            const parent = findParent(files, currentFolder.id);
+            currentFolder = parent;
+            renderFileTree(parent ? parent.children : files);
+            updateStats();
+        }
+
+        function selectAll() {
+            const nodes = currentFolder ? currentFolder.children : files;
+            const allSelected = nodes.every(node =>
+                node.type === 'folder' ? areAllChildrenSelected(node) : node.selected
+            );
+            nodes.forEach(node => {
+                if (node.type === 'folder') {
+                    toggleFolder(node, !allSelected);
+                } else {
+                    node.selected = !allSelected;
+                }
+            });
+            updateStats();
+            renderFileTree(nodes);
+        }
+
+        function invertSelection() {
+            const nodes = currentFolder ? currentFolder.children : files;
+            nodes.forEach(node => {
+                if (node.type === 'folder') {
+                    invertFolderSelection(node);
+                } else {
+                    node.selected = !node.selected;
+                }
+            });
+            updateStats();
+            renderFileTree(nodes);
+        }
+
+        function invertFolderSelection(folder) {
+            folder.selected = !folder.selected;
+            (folder.children || []).forEach(child => {
+                if (child.type === 'folder') {
+                    invertFolderSelection(child);
+                } else {
+                    child.selected = !child.selected;
+                }
+            });
+        }
+
+        function selectEverything() {
+            const allSelected = files.every(node =>
+                node.type === 'folder' ? areAllChildrenSelected(node) : node.selected
+            );
+            const select = !allSelected;
+            const queue = [...files];
+            while (queue.length) {
+                const node = queue.pop();
+                node.selected = select;
+                if (node.children) queue.push(...node.children);
+            }
+            updateStats();
+            renderFileTree(currentFolder ? currentFolder.children : files);
+        }
+
+        function collectFileNodes(nodes, result = []) {
+            nodes.forEach(node => {
+                if (node.type === 'folder') {
+                    collectFileNodes(node.children || [], result);
+                } else {
+                    result.push(node);
+                }
+            });
+            return result;
+        }
+
+        function parseRangeInput(value) {
+            const normalized = value
+                .replace(/\bor\b/gi, ' ')
+                .replace(/\bto\b/gi, '-')
+                .replace(/\s*-\s*/g, '-');
+            const parts = normalized.split(/[,\s]+/).filter(Boolean);
+            if (!parts.length) {
+                throw new Error('Enter file numbers, e.g. 1-6 or 9-43.');
+            }
+            return parts.map(part => {
+                const match = part.match(/^(\d+)(?:-(\d+))?$/);
+                if (!match) throw new Error(`Invalid range: ${part}`);
+                const start = parseInt(match[1], 10);
+                const end = match[2] === undefined ? start : parseInt(match[2], 10);
+                if (start < 1 || end < start) throw new Error(`Invalid range: ${part}`);
+                return [start, end];
+            });
+        }
+
+        function refreshFolderSelection(nodes) {
+            nodes.forEach(node => {
+                if (node.type === 'folder') {
+                    refreshFolderSelection(node.children || []);
+                    node.selected = areAllChildrenSelected(node);
+                }
+            });
+        }
+
+        function applyRangeSelection() {
+            let ranges;
+            try {
+                ranges = parseRangeInput(rangeInput.value);
+            } catch (error) {
+                showInfoModal('Invalid range', error.message);
+                return;
+            }
+            const fileNodes = collectFileNodes(files);
+            const selected = new Set();
+            fileNodes.forEach(node => {
+                const index = parseInt(node.id, 10);
+                if (!Number.isNaN(index) && ranges.some(([start, end]) => index >= start && index <= end)) {
+                    selected.add(index);
+                }
+            });
+            if (!selected.size) {
+                showInfoModal('No files matched', 'No file numbers matched that range.');
+                return;
+            }
+            fileNodes.forEach(node => {
+                node.selected = selected.has(parseInt(node.id, 10));
+            });
+            refreshFolderSelection(files);
+            updateStats();
+            renderFileTree(currentFolder ? currentFolder.children : files);
+        }
+
+        function openModal() {
+            reusableModal.classList.add('open');
+        }
+
+        function closeModal() {
+            reusableModal.classList.remove('open');
+        }
+
+        function showInfoModal(title, message) {
+            modalTitle.textContent = title;
+            modalBody.textContent = message;
+            modalFooter.innerHTML = '<button class="btn btn-primary" type="button" onclick="closeModal()">Okay</button>';
+            openModal();
+        }
+
+        function submitData() {
+            if (parseInt(selectedCount.textContent, 10) === 0) {
+                showInfoModal('No files selected', 'Select at least one file before submitting.');
+                return;
+            }
+            modalTitle.textContent = 'Processing...';
+            modalBody.textContent = `Submitting ${selectedCount.textContent} file(s)...`;
+            modalFooter.innerHTML = '';
+            openModal();
+            const requestUrl = `/app/files/torrent?gid=${urlParams.get('gid')}&pin=${pinInput.value}&mode=selection`;
+            fetch(requestUrl, {
+                method: 'POST',
+                body: JSON.stringify(files)
+            }).then(response => {
+                if (response.ok) {
+                    modalTitle.textContent = 'Success';
+                    modalBody.textContent = 'Your selection has been submitted successfully.';
+                } else {
+                    modalTitle.textContent = 'Error';
+                    modalBody.textContent = 'An error occurred while submitting your selection.';
+                }
+                modalFooter.innerHTML = '<button class="btn btn-primary" type="button" onclick="closeModal()">Okay</button>';
+            }).catch(error => {
+                modalTitle.textContent = 'Error';
+                modalBody.textContent = error.message;
+                modalFooter.innerHTML = '<button class="btn btn-primary" type="button" onclick="closeModal()">Okay</button>';
+            });
+        }
+
+        function loadFiles() {
+            if (!pinInput.value) {
+                showInfoModal('Missing PIN', 'Enter the PIN from Telegram.');
+                return;
+            }
+            if (!urlParams.get('gid')) {
+                showInfoModal('Missing GID', 'The download GID is missing from the URL.');
+                return;
+            }
+            const requestUrl = `/app/files/torrent?gid=${urlParams.get('gid')}&pin=${pinInput.value}&mode=get`;
+            fetch(requestUrl).then(response => response.json().then(data => {
+                if (!response.ok || data.error) {
+                    showInfoModal(data.error || 'Error getting files', data.message || 'Try again.');
+                    return;
+                }
+                files = data.files || [];
+                pinEntry.classList.add('hidden');
+                fileManager.classList.remove('hidden');
+                renderFileTree(files);
+                updateStats();
+            })).catch(error => {
+                showInfoModal('Server error', error.message);
+            });
+        }
+
+        selectAllBtn.addEventListener('click', selectAll);
+        invertSelectionBtn.addEventListener('click', invertSelection);
+        selectEverythingBtn.addEventListener('click', selectEverything);
+        applyRangeBtn.addEventListener('click', applyRangeSelection);
+        rangeInput.addEventListener('keypress', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                applyRangeSelection();
+            }
+        });
+        submitBtn.addEventListener('click', submitData);
+        submitPin.addEventListener('click', loadFiles);
+        pinInput.addEventListener('keypress', event => {
+            if (event.key === 'Enter') loadFiles();
+        });
+        reusableModal.addEventListener('click', event => {
+            if (event.target === reusableModal) closeModal();
+        });
+    </script>
+</body>
+
+</html>

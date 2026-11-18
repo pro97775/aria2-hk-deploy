@@ -1,7 +1,27 @@
-appenv/*
-mltbenv/*
+# Build context hygiene
 .git
+.github
+.orthex
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+appenv/
+mltbenv/
+venv/
+all/
+repos/
+
+# Runtime state
+downloads/
 log.txt
 rlog.txt
+
+# Development/deployment leftovers
+tests/
+pytest.ini
+requirements-dev.txt
+pre-Dockerfile.zip
+README.md
+LICENSE
+_config.yml
+captain-definition
